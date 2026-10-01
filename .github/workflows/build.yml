@@ -12,6 +12,9 @@ jobs:
       with:
         xcode-version: '15.4'
 
+    - name: List Sources
+      run: ls -la Sources/
+
     - name: Build Application
       run: |
         SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -26,7 +29,7 @@ jobs:
           -framework UIKit \
           -framework Foundation \
           Sources/CalibrationApp.swift \
-          Sources/CalibrationTables.swift \      ← добавили
+          Sources/CalibrationTables.swift \
           Sources/ContentView.swift \
           Sources/Models.swift \
           Sources/Interpolation.swift \
