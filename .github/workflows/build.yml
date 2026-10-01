@@ -26,6 +26,7 @@ jobs:
           -framework UIKit \
           -framework Foundation \
           Sources/CalibrationApp.swift \
+          Sources/CalibrationTables.swift \      ← добавили
           Sources/ContentView.swift \
           Sources/Models.swift \
           Sources/Interpolation.swift \
