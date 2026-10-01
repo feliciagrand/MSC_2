@@ -1,55 +1,67 @@
 name: Build IPA
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: macos-14
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: List available Xcodes
-        run: ls /Applications | grep Xcode
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+    - name: Build Application
+      run: |
+        SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+        mkdir -p Payload/CalibrationApp.app
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+        # Компиляция всех Swift-файлов проекта в один бинарник
+        swiftc \
+          -target arm64-apple-ios15.0 \
+          -sdk $SDK_PATH \
+          -parse-as-library \
+          -framework SwiftUI \
+          -framework UIKit \
+          -framework Foundation \
+          Sources/CalibrationApp.swift \
+          Sources/ContentView.swift \
+          Sources/Models.swift \
+          Sources/Interpolation.swift \
+          Sources/TankRowState.swift \
+          -o Payload/CalibrationApp.app/CalibrationApp
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+        # Генерация Info.plist
+        cat <<EOF > Payload/CalibrationApp.app/Info.plist
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key><string>CalibrationApp</string>
+            <key>CFBundleIdentifier</key><string>com.neverwin.calibrationcalc</string>
+            <key>CFBundleName</key><string>CalibrationApp</string>
+            <key>CFBundleDisplayName</key><string>CalibrationCalc</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>MinimumOSVersion</key><string>15.0</string>
+            <key>UILaunchScreen</key><dict/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationLandscapeLeft</string>
+                <string>UIInterfaceOrientationLandscapeRight</string>
+            </array>
+        </dict>
+        </plist>
+        EOF
 
-      - name: Build archive (unsigned)
-        run: |
-          xcodebuild \
-            -project CalibrationApp.xcodeproj \
-            -scheme CalibrationApp \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath $RUNNER_TEMP/CalibrationApp.xcarchive \
-            archive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM=""
+        # Упаковка в IPA
+        zip -r CalibrationApp.ipa Payload
 
-      - name: Package into IPA
-        run: |
-          mkdir -p $RUNNER_TEMP/Payload
-          cp -R $RUNNER_TEMP/CalibrationApp.xcarchive/Products/Applications/CalibrationApp.app \
-                $RUNNER_TEMP/Payload/
-          cd $RUNNER_TEMP
-          zip -r CalibrationApp.ipa Payload
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CalibrationApp-ipa
-          path: ${{ runner.temp }}/CalibrationApp.ipa
-          retention-days: 30
+    - uses: actions/upload-artifact@v4
+      with:
+        name: CalibrationApp-IPA
+        path: CalibrationApp.ipa
