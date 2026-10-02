@@ -4,79 +4,24 @@ struct ContentView: View {
 
     @State private var trimInput: String = ""
     @State private var states: [String: TankRowState] = [:]
-    @State private var showAlert = false
-    @State private var alertMessage = ""
-    @State private var selectedTank: Tank? = nil
-
-    // Список основных HFO-танков (без HFO Overflow и MGO Stor для основного блока)
-    private var mainTanks: [Tank] { tanks }
 
     var body: some View {
         NavigationView {
-            ZStack(alignment: .bottom) {
+            ZStack(alignment: .top) {
 
-                // Фон как в системных приложениях
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: 16) {
 
-                        // ── Trim card ───────────────────────────────
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Trim")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .textCase(.uppercase)
+                        // ── Trim ─────────────────────────────
+                        trimCard
 
-                            HStack(spacing: 12) {
-                                Image(systemName: "arrow.up.arrow.down")
-                                    .foregroundColor(.blue)
-                                    .font(.title3)
-
-                                TextField("0.0", text: $trimInput)
-                                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.leading)
-
-                                Text("m")
-                                    .font(.title3)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(16)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .cornerRadius(14)
+                        // ── Tanks ────────────────────────────
+                        ForEach(tanks) { tank in
+                            tankCard(tank)
                         }
-                        .padding(.horizontal, 16)
-
-                        // ── Tanks list ──────────────────────────────
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Tanks")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .textCase(.uppercase)
-                                .padding(.horizontal, 16)
-
-                            VStack(spacing: 0) {
-                                ForEach(Array(tanks.enumerated()), id: \.element.id) { index, tank in
-                                    NavigationLink(destination: TankDetailView(tank: tank, states: $states)) {
-                                        tankListRow(tank: tank)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if index < tanks.count - 1 {
-                                        Divider()
-                                            .padding(.leading, 16)
-                                    }
-                                }
-                            }
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .cornerRadius(14)
-                            .padding(.horizontal, 16)
-                        }
-
-                        // Отступ снизу под кнопку Calculate
-                        Spacer().frame(height: 100)
 
                         // Copyright
                         VStack(spacing: 2) {
@@ -88,26 +33,11 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.top, 8)
+                        .padding(.bottom, 20)
                     }
-                    .padding(.top, 8)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
                 }
-
-                // ── Floating Calculate button ───────────────────
-                Button(action: calculate) {
-                    HStack {
-                        Image(systemName: "equal.circle.fill")
-                        Text("Calculate")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.blue.opacity(0.35), radius: 12, x: 0, y: 6)
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
             }
             .navigationTitle("Calibration")
             .navigationBarTitleDisplayMode(.large)
@@ -115,15 +45,14 @@ struct ContentView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         withAnimation {
+                            trimInput = ""
                             for tank in tanks {
                                 states[tank.name] = TankRowState()
                             }
-                            trimInput = ""
                         }
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                     }
-                    .disabled(states.values.allSatisfy { $0.sounding.isEmpty && $0.ullage.isEmpty && $0.volumeInput.isEmpty } && trimInput.isEmpty)
                 }
             }
         }
@@ -135,59 +64,228 @@ struct ContentView: View {
                 }
             }
         }
-        .alert(isPresented: $showAlert) {
-            Alert(title: Text("Attention"),
-                  message: Text(alertMessage),
-                  dismissButton: .default(Text("OK")))
-        }
     }
 
-    // ── Строка списка танков ──────────────────────────────
+    // MARK: - Trim card
+
     @ViewBuilder
-    private func tankListRow(tank: Tank) -> some View {
-        let st = states[tank.name] ?? TankRowState()
-
-        HStack(spacing: 12) {
-
-            // Иконка
-            ZStack {
-                Circle()
-                    .fill(iconColor(for: tank).opacity(0.15))
-                    .frame(width: 40, height: 40)
-                Image(systemName: iconName(for: tank))
-                    .foregroundColor(iconColor(for: tank))
-                    .font(.system(size: 16, weight: .semibold))
-            }
-
-            // Название + подсказка
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tank.name)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                HStack(spacing: 6) {
-                    statusPill(text: statusText(st: st, tank: tank),
-                               color: statusColor(st: st))
-                }
-            }
-
-            Spacer()
-
-            // Full объём
-            Text(String(format: "%.1f m³", tank.volFull))
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            Image(systemName: "chevron.right")
+    private var trimCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TRIM")
                 .font(.footnote)
                 .foregroundColor(.secondary)
+
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .foregroundColor(.blue)
+                    .font(.title3)
+
+                TextField("0.0", text: $trimInput)
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.leading)
+                    .onChange(of: trimInput) { _ in recalculateAll() }
+
+                Text("m")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(14)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 16)
-        .contentShape(Rectangle())
     }
 
-    // ── Логика вспомогательных данных ─────────────────────
+    // MARK: - Tank card
+
+    @ViewBuilder
+    private func tankCard(_ tank: Tank) -> some View {
+        let binding = Binding<TankRowState>(
+            get: { states[tank.name] ?? TankRowState() },
+            set: { states[tank.name] = $0 }
+        )
+
+        VStack(alignment: .leading, spacing: 12) {
+
+            // Название танка + полный объём
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(iconColor(for: tank).opacity(0.15))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: iconName(for: tank))
+                        .foregroundColor(iconColor(for: tank))
+                        .font(.system(size: 14, weight: .semibold))
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tank.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Text(String(format: "Full: %.3f m³ · %.0f cm", tank.volFull, tank.meshFull))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+            }
+
+            Divider()
+
+            // ── Sounding ──────────────────────────────
+            rowBlock(
+                title: "Sounding",
+                unit: "cm",
+                inputPlaceholder: "cm",
+                text: binding.sounding,
+                result: binding.wrappedValue.volSoundingResult,
+                resultUnit: "m³",
+                accent: .blue
+            )
+
+            // ── Ullage ────────────────────────────────
+            rowBlock(
+                title: "Ullage",
+                unit: "cm",
+                inputPlaceholder: "cm",
+                text: binding.ullage,
+                result: binding.wrappedValue.volUllageResult,
+                resultUnit: "m³",
+                accent: .blue
+            )
+
+            // ── Target Volume ─────────────────────────
+            targetBlock(binding: binding)
+        }
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(14)
+    }
+
+    // MARK: - Блок строка: заголовок / ввод / результат
+
+    @ViewBuilder
+    private func rowBlock(
+        title: String,
+        unit: String,
+        inputPlaceholder: String,
+        text: Binding<String>,
+        result: String,
+        resultUnit: String,
+        accent: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 10) {
+                // Ввод
+                HStack {
+                    TextField(inputPlaceholder, text: text)
+                        .keyboardType(.decimalPad)
+                        .onChange(of: text.wrappedValue) { _ in recalculateAll() }
+                    Text(unit)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .cornerRadius(8)
+
+                // Стрелка
+                Image(systemName: "arrow.right")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                // Результат
+                HStack {
+                    Text(result)
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundColor(accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Spacer()
+                    Text(resultUnit)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(accent.opacity(0.10))
+                .cornerRadius(8)
+            }
+        }
+    }
+
+    // MARK: - Блок Target Volume
+
+    @ViewBuilder
+    private func targetBlock(binding: Binding<TankRowState>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("TARGET VOLUME")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 10) {
+                HStack {
+                    TextField("m³", text: binding.volumeInput)
+                        .keyboardType(.decimalPad)
+                        .onChange(of: binding.wrappedValue.volumeInput) { _ in recalculateAll() }
+                    Text("m³")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .cornerRadius(8)
+
+                Image(systemName: "arrow.right")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                // Результаты: sounding и ullage
+                HStack(spacing: 8) {
+                    miniResult(label: "S",
+                               value: binding.wrappedValue.resultSoundingLevel,
+                               unit: "cm",
+                               accent: .orange)
+
+                    miniResult(label: "U",
+                               value: binding.wrappedValue.resultUllageLevel,
+                               unit: "cm",
+                               accent: .orange)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func miniResult(label: String, value: String, unit: String, accent: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.system(.body, design: .rounded))
+                .fontWeight(.semibold)
+                .foregroundColor(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(unit)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(accent.opacity(0.10))
+        .cornerRadius(8)
+    }
+
+    // MARK: - Иконки
 
     private func iconName(for tank: Tank) -> String {
         if tank.name.contains("MGO") { return "drop.fill" }
@@ -206,53 +304,19 @@ struct ContentView: View {
         return .blue
     }
 
-    private func statusText(st: TankRowState, tank: Tank) -> String {
-        if !st.sounding.isEmpty { return "Sounding \(st.sounding) cm" }
-        if !st.ullage.isEmpty { return "Ullage \(st.ullage) cm" }
-        if !st.volumeInput.isEmpty { return "Target \(st.volumeInput) m³" }
-        return "Not entered"
-    }
+    // MARK: - Автоматический пересчёт
 
-    private func statusColor(st: TankRowState) -> Color {
-        if !st.sounding.isEmpty || !st.ullage.isEmpty || !st.volumeInput.isEmpty {
-            return .blue
-        }
-        return .secondary
-    }
-
-    @ViewBuilder
-    private func statusPill(text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption2)
-            .foregroundColor(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.12))
-            .cornerRadius(6)
-    }
-
-    // ── Расчёт ────────────────────────────────────────────
-    private func calculate() {
+    private func recalculateAll() {
         guard let trim = Double(trimInput.replacingOccurrences(of: ",", with: ".")) else {
-            alertMessage = "Please enter a valid trim value (m)."
-            showAlert = true
-            return
-        }
-
-        // Проверка конфликтов Sounding / Ullage
-        var conflicts: [String] = []
-        for tank in tanks {
-            if let st = states[tank.name] {
-                let s = st.sounding.trimmingCharacters(in: .whitespaces)
-                let u = st.ullage.trimmingCharacters(in: .whitespaces)
-                if !s.isEmpty && !u.isEmpty {
-                    conflicts.append(tank.name)
-                }
+            // Нет валидного trim — очищаем результаты
+            for tank in tanks {
+                var st = states[tank.name] ?? TankRowState()
+                st.volSoundingResult = "~~~"
+                st.volUllageResult = "~~~"
+                st.resultSoundingLevel = "~~~"
+                st.resultUllageLevel = "~~~"
+                states[tank.name] = st
             }
-        }
-        if !conflicts.isEmpty {
-            alertMessage = "Specify either Sounding or Ullage (not both) for:\n" + conflicts.joined(separator: "\n")
-            showAlert = true
             return
         }
 
@@ -264,7 +328,7 @@ struct ContentView: View {
                 if let vol = interpolateVolume(trim: trim, levelCm: s, table: tank.tableS) {
                     st.volSoundingResult = String(format: "%.3f", vol)
                 } else {
-                    st.volSoundingResult = "Out of range"
+                    st.volSoundingResult = tank.tableS == nil ? "—" : "Out of range"
                 }
             } else if !st.sounding.isEmpty {
                 st.volSoundingResult = "Invalid"
@@ -277,7 +341,7 @@ struct ContentView: View {
                 if let vol = interpolateVolume(trim: trim, levelCm: u, table: tank.tableU) {
                     st.volUllageResult = String(format: "%.3f", vol)
                 } else {
-                    st.volUllageResult = "Out of range"
+                    st.volUllageResult = tank.tableU == nil ? "—" : "Out of range"
                 }
             } else if !st.ullage.isEmpty {
                 st.volUllageResult = "Invalid"
@@ -285,18 +349,18 @@ struct ContentView: View {
                 st.volUllageResult = "~~~"
             }
 
-            // Volume → Level
+            // Volume → Level (обратный пересчёт)
             if let targetVol = Double(st.volumeInput.replacingOccurrences(of: ",", with: ".")) {
                 if let lvlS = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableS) {
                     st.resultSoundingLevel = String(format: "%.1f", lvlS)
                 } else {
-                    st.resultSoundingLevel = tank.tableS == nil ? "No table" : "Out of range"
+                    st.resultSoundingLevel = tank.tableS == nil ? "—" : "—"
                 }
 
                 if let lvlU = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableU) {
                     st.resultUllageLevel = String(format: "%.1f", lvlU)
                 } else {
-                    st.resultUllageLevel = tank.tableU == nil ? "No table" : "Out of range"
+                    st.resultUllageLevel = tank.tableU == nil ? "—" : "—"
                 }
             } else if !st.volumeInput.isEmpty {
                 st.resultSoundingLevel = "Invalid"
@@ -308,159 +372,5 @@ struct ContentView: View {
 
             states[tank.name] = st
         }
-    }
-}
-
-// ─────────────────────────────────────────────────────────
-// Экран конкретного танка
-// ─────────────────────────────────────────────────────────
-struct TankDetailView: View {
-
-    let tank: Tank
-    @Binding var states: [String: TankRowState]
-    @Environment(\.presentationMode) var presentationMode
-
-    private var binding: Binding<TankRowState> {
-        Binding<TankRowState>(
-            get: { states[tank.name] ?? TankRowState() },
-            set: { states[tank.name] = $0 }
-        )
-    }
-
-    var body: some View {
-        Form {
-            // ── Sounding ──────────────────────────────
-            Section {
-                HStack {
-                    Image(systemName: "arrow.down.to.line")
-                        .foregroundColor(.blue)
-                        .frame(width: 24)
-                    TextField("cm", text: binding.sounding)
-                        .keyboardType(.decimalPad)
-                    if !binding.wrappedValue.sounding.isEmpty {
-                        Button {
-                            binding.wrappedValue.sounding = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
-                if binding.wrappedValue.volSoundingResult != "~~~" {
-                    HStack {
-                        Text("Volume")
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text(binding.wrappedValue.volSoundingResult + " m³")
-                            .font(.system(.body, design: .rounded))
-                            .foregroundColor(.blue)
-                            .fontWeight(.semibold)
-                    }
-                }
-            } header: {
-                Text("Sounding")
-            }
-
-            // ── Ullage ────────────────────────────────
-            Section {
-                HStack {
-                    Image(systemName: "arrow.up.to.line")
-                        .foregroundColor(.blue)
-                        .frame(width: 24)
-                    TextField("cm", text: binding.ullage)
-                        .keyboardType(.decimalPad)
-                    if !binding.wrappedValue.ullage.isEmpty {
-                        Button {
-                            binding.wrappedValue.ullage = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
-                if binding.wrappedValue.volUllageResult != "~~~" {
-                    HStack {
-                        Text("Volume")
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text(binding.wrappedValue.volUllageResult + " m³")
-                            .font(.system(.body, design: .rounded))
-                            .foregroundColor(.blue)
-                            .fontWeight(.semibold)
-                    }
-                }
-            } header: {
-                Text("Ullage")
-            }
-
-            // ── Target volume ─────────────────────────
-            Section {
-                HStack {
-                    Image(systemName: "target")
-                        .foregroundColor(.orange)
-                        .frame(width: 24)
-                    TextField("m³", text: binding.volumeInput)
-                        .keyboardType(.decimalPad)
-                    if !binding.wrappedValue.volumeInput.isEmpty {
-                        Button {
-                            binding.wrappedValue.volumeInput = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
-                HStack {
-                    Text("Sounding")
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(binding.wrappedValue.resultSoundingLevel == "~~~"
-                         ? "—"
-                         : binding.wrappedValue.resultSoundingLevel + " cm")
-                        .font(.system(.body, design: .rounded))
-                        .foregroundColor(.orange)
-                        .fontWeight(.semibold)
-                }
-
-                HStack {
-                    Text("Ullage")
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(binding.wrappedValue.resultUllageLevel == "~~~"
-                         ? "—"
-                         : binding.wrappedValue.resultUllageLevel + " cm")
-                        .font(.system(.body, design: .rounded))
-                        .foregroundColor(.orange)
-                        .fontWeight(.semibold)
-                }
-            } header: {
-                Text("Target Volume")
-            }
-
-            // ── Info ──────────────────────────────────
-            Section {
-                HStack {
-                    Text("Full volume")
-                    Spacer()
-                    Text(String(format: "%.3f m³", tank.volFull))
-                        .foregroundColor(.green)
-                        .fontWeight(.medium)
-                }
-                HStack {
-                    Text("Full height")
-                    Spacer()
-                    Text(String(format: "%.0f cm", tank.meshFull))
-                        .foregroundColor(.green)
-                        .fontWeight(.medium)
-                }
-            } header: {
-                Text("Tank Info")
-            }
-        }
-        .navigationTitle(tank.name)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
