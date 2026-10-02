@@ -12,6 +12,6 @@ struct Tank: Identifiable {
 }
 
 let tanks: [Tank] = [
-    Tank(name: "MGO Service",  volFull: 52.071, meshFull: 442.0, tableS: data_No_3_P_S, tableU: nil),
-    Tank(name: "MGO Settling",  volFull: 14.748, meshFull: 430.0, tableS: data_No_4_P_S, tableU: nil),
+    Tank(name: "MGO Service",  volFull: 52.071, meshFull: 442.0, tableS: mgo_service, tableU: nil),
+    Tank(name: "MGO Settling",  volFull: 14.748, meshFull: 430.0, tableS: mgo_settling, tableU: nil),
 ]
