@@ -12,18 +12,23 @@ struct Tank: Identifiable {
 }
 
 let tanks: [Tank] = [
-    Tank(name: "No 3 HFO (Port)",  volFull: 537.730, meshFull: 1290.0, tableS: data_No_3_P_S, tableU: data_No_3_P_U),
-    Tank(name: "No 4 HFO (Port)",  volFull: 627.480, meshFull: 1396.0, tableS: data_No_4_P_S, tableU: data_No_4_P_U),
-    Tank(name: "No 4 HFO (STBD)",  volFull: 627.480, meshFull: 1396.0, tableS: data_No_4_S_S, tableU: data_No_4_S_U),
-    Tank(name: "No 5 HFO (Port)",  volFull: 697.420, meshFull: 1504.0, tableS: data_No_5_P_S, tableU: data_No_5_P_U),
-    Tank(name: "No 5 HFO (STBD)",  volFull: 697.420, meshFull: 1443.0, tableS: data_No_5_S_S, tableU: data_No_5_S_U),
-    Tank(name: "HFO Settling",  volFull: 68.811, meshFull: 688.6, tableS: data_5_S, tableU: data_5_U),
-    Tank(name: "HFO Service",  volFull: 68.811, meshFull: 688.0, tableS: data_4_S, tableU: data_4_U),
-    Tank(name: "L HFO Settling",  volFull: 70.687, meshFull: 688.7, tableS: data_7_S, tableU: data_7_U),
-    Tank(name: "L HFO Service",  volFull: 72.388, meshFull: 687.5, tableS: data_6_S, tableU: data_6_U),
-    Tank(name: "HFO Overflow",  volFull: 27.099, meshFull: 250.0, tableS: data_8, tableU: nil),
-    Tank(name: "No 3 HFO (STBD)",  volFull: 537.730, meshFull: 1290.0, tableS: data_No_3_S_S, tableU: data_No_3_S_U),
-    Tank(name: "MGO Settling",  volFull: 14.748, meshFull: 430.0, tableS: data_2, tableU: nil),
-    Tank(name: "MGO Service",  volFull: 52.071, meshFull: 442.0, tableS: data_1, tableU: nil),
-    Tank(name: "MGO Stor",  volFull: 92.518, meshFull: 254.0, tableS: data_3, tableU: nil),
+    // ───── Группа A: 12 машинных танков ─────
+    Tank(name: "M/E L.O. SUMP.T.(S)",              volFull: 94.85,   meshFull: 230, tableS: yashi_data_1,  tableU: nil),
+    Tank(name: "M/E HYD. CON. OIL. TANK(C)",       volFull: 14.81,   meshFull: 240, tableS: yashi_data_2,  tableU: nil),
+    Tank(name: "BILGE T.(S)",                      volFull: 177.76,  meshFull: 330, tableS: yashi_data_3,  tableU: nil),
+    Tank(name: "OILY BILGE T.(P)",                 volFull: 117.34,  meshFull: 320, tableS: yashi_data_4,  tableU: nil),
+    Tank(name: "L.O. SLUDGE T.(P)",                volFull: 20.56,   meshFull: 140, tableS: yashi_data_5,  tableU: nil),
+    Tank(name: "WASTE F.O.T.(P)",                  volFull: 33.76,   meshFull: 135, tableS: yashi_data_6,  tableU: nil),
+    Tank(name: "F.O. DRAIN T.(P)",                 volFull: 13.19,   meshFull: 300, tableS: yashi_data_7,  tableU: nil),
+    Tank(name: "S/T L.O. SUMP.T.(C)³",             volFull: 8.74,    meshFull: 115, tableS: yashi_data_8,  tableU: nil),
+    Tank(name: "H.F.O. OVERFLOW T.(P)(AFT)",       volFull: 83.67,   meshFull: 295, tableS: yashi_data_9,  tableU: nil),
+    Tank(name: "M.G.O. OVERFLOW T.(C)",            volFull: 78.61,   meshFull: 295, tableS: yashi_data_10, tableU: nil),
+    Tank(name: "M/E SCAV. AIR BOX DRAIN T.(P)",    volFull: 1.96,    meshFull: 130, tableS: yashi_data_11, tableU: nil),
+    Tank(name: "M/E AIR CLR. DRAIN T.(S)",         volFull: 46.97,   meshFull: 300, tableS: yashi_data_12, tableU: nil),
+
+    // ───── Группа B: 4 танка с расширенным диапазоном (sounding в см) ─────
+    Tank(name: "Alkali",   volFull: 243.47,  meshFull: 1037, tableS: yashi_Alkali,   tableU: nil),
+    Tank(name: "Sludge",   volFull: 62.53,   meshFull: 432,  tableS: yashi_Sludge,   tableU: nil),
+    Tank(name: "Hold (P)", volFull: 1128.61, meshFull: 1555, tableS: yashi_Hold_P,   tableU: nil),
+    Tank(name: "Hold (S)", volFull: 1309.55, meshFull: 1555, tableS: yashi_Hold_S,   tableU: nil),
 ]
