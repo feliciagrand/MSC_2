@@ -4,19 +4,78 @@ struct ContentView: View {
 
     @State private var trimInput: String = ""
     @State private var states: [String: TankRowState] = [:]
+    @State private var showResetConfirm = false
 
     var body: some View {
         NavigationView {
-            ZStack(alignment: .top) {
+            VStack(spacing: 0) {
 
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea()
+                // ───────── ЗАКРЕПЛЁННАЯ ШАПКА ─────────
+                VStack(spacing: 8) {
 
+                    // ── Строка 1: Название по центру + Reset справа ──
+                    ZStack {
+                        Text("MSC Turin III")                 // ← ИМЯ СУДНА
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+
+                        HStack {
+                            Spacer()
+                            Button {
+                                showResetConfirm = true
+                            } label: {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.red)
+                                    .cornerRadius(8)
+                            }
+                            .accessibilityLabel("Reset")
+                        }
+                    }
+
+                    // ── Строка 2: Trim под названием, по центру ──
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .foregroundColor(.blue)
+                            .font(.subheadline)
+
+                        Text("TRIM")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        TextField("0.0", text: $trimInput)
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.center)
+                            .frame(width: 90)
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 8)
+                            .background(Color(.tertiarySystemGroupedBackground))
+                            .cornerRadius(8)
+                            .onChange(of: trimInput) { _ in recalculateAll() }
+
+                        Text("m")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
+                .background(Color(.systemBackground))       // ← НЕПРОЗРАЧНЫЙ фон
+                .overlay(
+                    Divider(), alignment: .bottom          // тонкая линия снизу
+                )
+
+                // ───────── КОНТЕНТ ─────────
                 ScrollView {
                     VStack(spacing: 16) {
-
-                        // ── Trim ─────────────────────────────
-                        trimCard
 
                         // ── Tanks ────────────────────────────
                         ForEach(tanks) { tank in
@@ -25,7 +84,7 @@ struct ContentView: View {
 
                         // Copyright
                         VStack(spacing: 2) {
-                            Text("Special for M/V 'MSC Turin III'")
+                            Text("Special for M/V 'MSC Turin III'")   // ← ИМЯ СУДНА
                             Text("™ Copyright © by NeverwiN. All Rights Reserved 2025")
                             Text("Telegram: +507 6861 3586")
                         }
@@ -38,23 +97,9 @@ struct ContentView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                 }
+                .background(Color(.systemGroupedBackground))
             }
-            .navigationTitle("MSC Turin III")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        withAnimation {
-                            trimInput = ""
-                            for tank in tanks {
-                                states[tank.name] = TankRowState()
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                    }
-                }
-            }
+            .navigationBarHidden(true)                     // убираем системный навбар
         }
         .navigationViewStyle(.stack)
         .onAppear {
@@ -64,35 +109,16 @@ struct ContentView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Trim card
-
-    @ViewBuilder
-    private var trimCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("TRIM")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.up.arrow.down")
-                    .foregroundColor(.blue)
-                    .font(.title3)
-
-                TextField("0.0", text: $trimInput)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.leading)
-                    .onChange(of: trimInput) { _ in recalculateAll() }
-
-                Text("m")
-                    .font(.title3)
-                    .foregroundColor(.secondary)
+        .alert("Reset all values?", isPresented: $showResetConfirm) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive) {
+                withAnimation {
+                    trimInput = ""
+                    for tank in tanks {
+                        states[tank.name] = TankRowState()
+                    }
+                }
             }
-            .padding(16)
-            .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(14)
         }
     }
 
@@ -107,7 +133,6 @@ struct ContentView: View {
 
         VStack(alignment: .leading, spacing: 12) {
 
-            // Название танка + полный объём
             HStack(spacing: 10) {
                 ZStack {
                     Circle()
@@ -132,7 +157,6 @@ struct ContentView: View {
 
             Divider()
 
-            // ── Sounding ──────────────────────────────
             rowBlock(
                 title: "Sounding",
                 unit: "cm",
@@ -143,7 +167,6 @@ struct ContentView: View {
                 accent: .blue
             )
 
-            // ── Ullage ────────────────────────────────
             rowBlock(
                 title: "Ullage",
                 unit: "cm",
@@ -154,7 +177,6 @@ struct ContentView: View {
                 accent: .blue
             )
 
-            // ── Target Volume ─────────────────────────
             targetBlock(binding: binding)
         }
         .padding(14)
@@ -180,7 +202,6 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
 
             HStack(spacing: 10) {
-                // Ввод
                 HStack {
                     TextField(inputPlaceholder, text: text)
                         .keyboardType(.decimalPad)
@@ -194,12 +215,10 @@ struct ContentView: View {
                 .background(Color(.tertiarySystemGroupedBackground))
                 .cornerRadius(8)
 
-                // Стрелка
                 Image(systemName: "arrow.right")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
-                // Результат
                 HStack {
                     Text(result)
                         .font(.system(.body, design: .rounded))
@@ -229,7 +248,6 @@ struct ContentView: View {
                 .font(.caption2)
                 .foregroundColor(.secondary)
 
-            // Ввод объёма
             HStack {
                 TextField("m³", text: binding.volumeInput)
                     .keyboardType(.decimalPad)
@@ -244,7 +262,6 @@ struct ContentView: View {
             .background(Color(.tertiarySystemGroupedBackground))
             .cornerRadius(8)
 
-            // Результат — Sounding
             HStack(spacing: 10) {
                 Image(systemName: "arrow.down.to.line")
                     .font(.caption)
@@ -269,7 +286,6 @@ struct ContentView: View {
             .background(Color.orange.opacity(0.12))
             .cornerRadius(8)
 
-            // Результат — Ullage
             HStack(spacing: 10) {
                 Image(systemName: "arrow.up.to.line")
                     .font(.caption)
@@ -319,7 +335,6 @@ struct ContentView: View {
 
     private func recalculateAll() {
         guard let trim = Double(trimInput.replacingOccurrences(of: ",", with: ".")) else {
-            // Нет валидного trim — очищаем результаты
             for tank in tanks {
                 var st = states[tank.name] ?? TankRowState()
                 st.volSoundingResult = "~~~"
@@ -334,7 +349,6 @@ struct ContentView: View {
         for tank in tanks {
             var st = states[tank.name] ?? TankRowState()
 
-            // Sounding → Volume
             if let s = Double(st.sounding.replacingOccurrences(of: ",", with: ".")) {
                 if let vol = interpolateVolume(trim: trim, levelCm: s, table: tank.tableS) {
                     st.volSoundingResult = String(format: "%.3f", vol)
@@ -347,7 +361,6 @@ struct ContentView: View {
                 st.volSoundingResult = "~~~"
             }
 
-            // Ullage → Volume
             if let u = Double(st.ullage.replacingOccurrences(of: ",", with: ".")) {
                 if let vol = interpolateVolume(trim: trim, levelCm: u, table: tank.tableU) {
                     st.volUllageResult = String(format: "%.3f", vol)
@@ -360,7 +373,6 @@ struct ContentView: View {
                 st.volUllageResult = "~~~"
             }
 
-            // Volume → Level (обратный пересчёт)
             if let targetVol = Double(st.volumeInput.replacingOccurrences(of: ",", with: ".")) {
                 if let lvlS = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableS) {
                     st.resultSoundingLevel = String(format: "%.1f", lvlS)
