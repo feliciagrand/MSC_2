@@ -15,7 +15,7 @@ struct ContentView: View {
 
                     // ── Строка 1: Название по центру + Reset справа ──
                     ZStack {
-                        Text("MSC Turin III")                 // ← ИМЯ СУДНА
+                        Text("MSC Yashi B")                 // ← ИМЯ СУДНА
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
@@ -84,7 +84,7 @@ struct ContentView: View {
 
                         // Copyright
                         VStack(spacing: 2) {
-                            Text("Special for M/V 'MSC Turin III'")   // ← ИМЯ СУДНА
+                            Text("Special for M/V 'MSC Yashi B'")   // ← ИМЯ СУДНА
                             Text("™ Copyright © by NeverwiN. All Rights Reserved 2025")
                             Text("Telegram: +507 6861 3586")
                         }
