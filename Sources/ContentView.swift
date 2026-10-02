@@ -13,9 +13,8 @@ struct ContentView: View {
                 // ───────── ЗАКРЕПЛЁННАЯ ШАПКА ─────────
                 VStack(spacing: 8) {
 
-                    // ── Строка 1: Название по центру + Reset справа ──
                     ZStack {
-                        Text("MSC Yashi B")                 // ← ИМЯ СУДНА
+                        Text("MSC Yashi B")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
@@ -39,7 +38,6 @@ struct ContentView: View {
                         }
                     }
 
-                    // ── Строка 2: Trim под названием, по центру ──
                     HStack(spacing: 10) {
                         Image(systemName: "arrow.up.arrow.down")
                             .foregroundColor(.blue)
@@ -51,7 +49,7 @@ struct ContentView: View {
 
                         TextField("0.0", text: $trimInput)
                             .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .keyboardType(.numbersAndPunctuation)   // ← ТЕПЕРЬ ЕСТЬ МИНУС
+                            .keyboardType(.numbersAndPunctuation)
                             .multilineTextAlignment(.center)
                             .frame(width: 90)
                             .padding(.vertical, 5)
@@ -68,23 +66,21 @@ struct ContentView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 10)
-                .background(Color(.systemBackground))       // ← НЕПРОЗРАЧНЫЙ фон
+                .background(Color(.systemBackground))
                 .overlay(
-                    Divider(), alignment: .bottom          // тонкая линия снизу
+                    Divider(), alignment: .bottom
                 )
 
                 // ───────── КОНТЕНТ ─────────
                 ScrollView {
                     VStack(spacing: 16) {
 
-                        // ── Tanks ────────────────────────────
                         ForEach(tanks) { tank in
                             tankCard(tank)
                         }
 
-                        // Copyright
                         VStack(spacing: 2) {
-                            Text("Special for M/V 'MSC Yashi B'")   // ← ИМЯ СУДНА
+                            Text("Special for M/V 'MSC Yashi B'")
                             Text("™ Copyright © by NeverwiN. All Rights Reserved 2025")
                             Text("Telegram: +507 6861 3586")
                         }
@@ -99,7 +95,7 @@ struct ContentView: View {
                 }
                 .background(Color(.systemGroupedBackground))
             }
-            .navigationBarHidden(true)                     // убираем системный навбар
+            .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
         .onAppear {
@@ -122,7 +118,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Tank card
+    // MARK: - Карточка танка
 
     @ViewBuilder
     private func tankCard(_ tank: Tank) -> some View {
@@ -157,6 +153,7 @@ struct ContentView: View {
 
             Divider()
 
+            // Sounding → m³
             rowBlock(
                 title: "Sounding",
                 unit: "cm",
@@ -167,6 +164,12 @@ struct ContentView: View {
                 accent: .blue
             )
 
+            // Процент заполнения (только для Alkali / Sludge / Hold)
+            if showsPercent(for: tank) {
+                percentBlock(percent: binding.wrappedValue.percentSounding)
+            }
+
+            // Ullage → m³
             rowBlock(
                 title: "Ullage",
                 unit: "cm",
@@ -177,6 +180,7 @@ struct ContentView: View {
                 accent: .blue
             )
 
+            // Target Volume
             targetBlock(binding: binding)
         }
         .padding(14)
@@ -204,7 +208,7 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 HStack {
                     TextField(inputPlaceholder, text: text)
-                        .keyboardType(.decimalPad)
+                        .keyboardType(.numbersAndPunctuation)
                         .onChange(of: text.wrappedValue) { _ in recalculateAll() }
                     Text(unit)
                         .font(.caption)
@@ -236,6 +240,36 @@ struct ContentView: View {
                 .background(accent.opacity(0.10))
                 .cornerRadius(8)
             }
+        }
+    }
+
+    // MARK: - Блок процента
+
+    @ViewBuilder
+    private func percentBlock(percent: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("PERCENT FULL")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                Image(systemName: "chart.pie.fill")
+                    .font(.caption)
+                    .foregroundColor(.purple)
+
+                Text(percent)
+                    .font(.system(.body, design: .rounded))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.purple)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.purple.opacity(0.10))
+            .cornerRadius(8)
         }
     }
 
@@ -315,20 +349,28 @@ struct ContentView: View {
     // MARK: - Иконки
 
     private func iconName(for tank: Tank) -> String {
-        if tank.name.contains("MGO") { return "drop.fill" }
-        if tank.name.contains("L HFO") { return "leaf.fill" }
-        if tank.name.contains("Settling") { return "hourglass" }
-        if tank.name.contains("Service") { return "bolt.fill" }
-        if tank.name.contains("Overflow") { return "exclamationmark.triangle.fill" }
+        if tank.name.contains("MGO") || tank.name.contains("M.G.O") { return "drop.fill" }
+        if tank.name.contains("Alkali") { return "drop.triangle.fill" }
+        if tank.name.contains("Sludge") { return "trash.fill" }
+        if tank.name.contains("Hold") { return "shippingbox.fill" }
+        if tank.name.contains("BILGE") { return "drop.fill" }
+        if tank.name.contains("OVERFLOW") { return "exclamationmark.triangle.fill" }
         return "fuelpump.fill"
     }
 
     private func iconColor(for tank: Tank) -> Color {
-        if tank.name.contains("MGO") { return .green }
-        if tank.name.contains("L HFO") { return .mint }
-        if tank.name.contains("Overflow") { return .orange }
-        if tank.name.contains("Settling") { return .brown }
+        if tank.name.contains("M.G.O") || tank.name.contains("MGO") { return .green }
+        if tank.name.contains("Alkali") { return .purple }
+        if tank.name.contains("Sludge") { return .brown }
+        if tank.name.contains("Hold") { return .indigo }
+        if tank.name.contains("OVERFLOW") { return .orange }
         return .blue
+    }
+
+    // Какие танки показывают процент
+    private func showsPercent(for tank: Tank) -> Bool {
+        let names: Set<String> = ["Alkali", "Sludge", "Hold (P)", "Hold (S)"]
+        return names.contains(tank.name)
     }
 
     // MARK: - Автоматический пересчёт
@@ -339,6 +381,7 @@ struct ContentView: View {
                 var st = states[tank.name] ?? TankRowState()
                 st.volSoundingResult = "~~~"
                 st.volUllageResult = "~~~"
+                st.percentSounding = "~~~"
                 st.resultSoundingLevel = "~~~"
                 st.resultUllageLevel = "~~~"
                 states[tank.name] = st
@@ -349,18 +392,29 @@ struct ContentView: View {
         for tank in tanks {
             var st = states[tank.name] ?? TankRowState()
 
+            // Sounding → Volume + %
             if let s = Double(st.sounding.replacingOccurrences(of: ",", with: ".")) {
                 if let vol = interpolateVolume(trim: trim, levelCm: s, table: tank.tableS) {
                     st.volSoundingResult = String(format: "%.3f", vol)
+                    if tank.volFull > 0 {
+                        let pct = (vol / tank.volFull) * 100.0
+                        st.percentSounding = String(format: "%.2f%%", pct)
+                    } else {
+                        st.percentSounding = "—"
+                    }
                 } else {
                     st.volSoundingResult = tank.tableS == nil ? "—" : "Out of range"
+                    st.percentSounding = "—"
                 }
             } else if !st.sounding.isEmpty {
                 st.volSoundingResult = "Invalid"
+                st.percentSounding = "Invalid"
             } else {
                 st.volSoundingResult = "~~~"
+                st.percentSounding = "~~~"
             }
 
+            // Ullage → Volume
             if let u = Double(st.ullage.replacingOccurrences(of: ",", with: ".")) {
                 if let vol = interpolateVolume(trim: trim, levelCm: u, table: tank.tableU) {
                     st.volUllageResult = String(format: "%.3f", vol)
@@ -373,6 +427,7 @@ struct ContentView: View {
                 st.volUllageResult = "~~~"
             }
 
+            // Volume → Level
             if let targetVol = Double(st.volumeInput.replacingOccurrences(of: ",", with: ".")) {
                 if let lvlS = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableS) {
                     st.resultSoundingLevel = String(format: "%.1f", lvlS)
