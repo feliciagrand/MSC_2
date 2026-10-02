@@ -7,6 +7,7 @@ struct TankRowState {
 
     var volSoundingResult: String = "~~~"
     var volUllageResult: String = "~~~"
+    var percentSounding: String = "~~~"
     var resultSoundingLevel: String = "~~~"
     var resultUllageLevel: String = "~~~"
 }
