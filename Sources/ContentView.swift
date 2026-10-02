@@ -51,7 +51,7 @@ struct ContentView: View {
 
                         TextField("0.0", text: $trimInput)
                             .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .keyboardType(.decimalPad)
+                            .keyboardType(.numbersAndPunctuation)   // ← ТЕПЕРЬ ЕСТЬ МИНУС
                             .multilineTextAlignment(.center)
                             .frame(width: 90)
                             .padding(.vertical, 5)
