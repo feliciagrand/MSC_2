@@ -162,7 +162,7 @@ struct ContentView: View {
         .cornerRadius(14)
     }
 
-    // MARK: - Блок строка: заголовок / ввод / результат
+    // MARK: - Блок Sounding / Ullage
 
     @ViewBuilder
     private func rowBlock(
@@ -229,60 +229,71 @@ struct ContentView: View {
                 .font(.caption2)
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 10) {
-                HStack {
-                    TextField("m³", text: binding.volumeInput)
-                        .keyboardType(.decimalPad)
-                        .onChange(of: binding.wrappedValue.volumeInput) { _ in recalculateAll() }
-                    Text("m³")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .cornerRadius(8)
-
-                Image(systemName: "arrow.right")
-                    .font(.caption2)
+            // Ввод объёма
+            HStack {
+                TextField("m³", text: binding.volumeInput)
+                    .keyboardType(.decimalPad)
+                    .font(.system(.body, design: .rounded))
+                    .onChange(of: binding.wrappedValue.volumeInput) { _ in recalculateAll() }
+                Text("m³")
+                    .font(.caption)
                     .foregroundColor(.secondary)
-
-                // Результаты: sounding и ullage
-                HStack(spacing: 8) {
-                    miniResult(label: "S",
-                               value: binding.wrappedValue.resultSoundingLevel,
-                               unit: "cm",
-                               accent: .orange)
-
-                    miniResult(label: "U",
-                               value: binding.wrappedValue.resultUllageLevel,
-                               unit: "cm",
-                               accent: .orange)
-                }
             }
-        }
-    }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(.tertiarySystemGroupedBackground))
+            .cornerRadius(8)
 
-    @ViewBuilder
-    private func miniResult(label: String, value: String, unit: String, accent: Color) -> some View {
-        HStack(spacing: 4) {
-            Text(label)
-                .font(.caption2)
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.system(.body, design: .rounded))
-                .fontWeight(.semibold)
-                .foregroundColor(accent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(unit)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            // Результат — Sounding
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.down.to.line")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                    .frame(width: 16)
+                Text("Sounding")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                Spacer()
+                Text(binding.wrappedValue.resultSoundingLevel)
+                    .font(.system(.body, design: .rounded))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("cm")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.12))
+            .cornerRadius(8)
+
+            // Результат — Ullage
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.up.to.line")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                    .frame(width: 16)
+                Text("Ullage")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                Spacer()
+                Text(binding.wrappedValue.resultUllageLevel)
+                    .font(.system(.body, design: .rounded))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("cm")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.12))
+            .cornerRadius(8)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(accent.opacity(0.10))
-        .cornerRadius(8)
     }
 
     // MARK: - Иконки
@@ -354,13 +365,13 @@ struct ContentView: View {
                 if let lvlS = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableS) {
                     st.resultSoundingLevel = String(format: "%.1f", lvlS)
                 } else {
-                    st.resultSoundingLevel = tank.tableS == nil ? "—" : "—"
+                    st.resultSoundingLevel = "—"
                 }
 
                 if let lvlU = reverseInterpolateLevel(trim: trim, targetVolume: targetVol, table: tank.tableU) {
                     st.resultUllageLevel = String(format: "%.1f", lvlU)
                 } else {
-                    st.resultUllageLevel = tank.tableU == nil ? "—" : "—"
+                    st.resultUllageLevel = "—"
                 }
             } else if !st.volumeInput.isEmpty {
                 st.resultSoundingLevel = "Invalid"
