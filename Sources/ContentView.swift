@@ -39,7 +39,7 @@ struct ContentView: View {
                     .padding(.top, 12)
                 }
             }
-            .navigationTitle("Calibration")
+            .navigationTitle("MSC Turin III")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
